@@ -8,7 +8,12 @@ function Home() {
         Welcome to Bloom Pizza!
       </h2>
       {/* clicking on the img should navigate to "/order" */}
-      <img alt="order-pizza" style={{ cursor: 'pointer' }} src={pizza} />
+      <img 
+        alt="order-pizza" 
+        style={{ cursor: 'pointer' }} 
+        src={pizza} 
+        onClick={() => window.location.href = '/order'} // {{ edit_1 }}
+      />
     </div>
   )
 }

@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react'
+import * as Yup from 'yup';
+
 
 // 👇 Here are the validation errors you will use with Yup.
 const validationErrors = {
@@ -7,9 +9,17 @@ const validationErrors = {
   sizeIncorrect: 'size must be S or M or L'
 }
 
-// 👇 Here you will create your schema.
 
-// 👇 This array could help you construct your checkboxes using .map in the JSX.
+const isFormValid = Yup.object().shape({
+  fullName: Yup.string()
+    .min(3, validationErrors.fullNameTooShort)
+    .max(20, validationErrors.fullNameTooLong)
+    .required('Full name is required'),
+  size: Yup.string()
+    .oneOf(['S', 'M', 'L'], validationErrors.sizeIncorrect)
+    .required('Size is required'),
+});
+
 const toppings = [
   { topping_id: '1', text: 'Pepperoni' },
   { topping_id: '2', text: 'Green Peppers' },
@@ -46,16 +56,18 @@ export default function Form() {
 
       <div className="input-group">
         {/* 👇 Maybe you could generate the checkboxes dynamically */}
-        <label key="1">
-          <input
-            name="Pepperoni"
-            type="checkbox"
-          />
-          Pepperoni<br />
-        </label>
+        {toppings.map((topping) => (
+          <label key={topping.topping_id}>
+            <input
+              name={topping.text}
+              type="checkbox"
+            />
+            {topping.text}<br />
+          </label>
+        ))}
       </div>
       {/* 👇 Make sure the submit stays disabled until the form validates! */}
-      <input type="submit" />
+      <input type="submit" disabled={!isFormValid} />
     </form>
   )
 }
