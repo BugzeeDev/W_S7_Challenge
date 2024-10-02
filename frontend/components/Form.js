@@ -89,7 +89,7 @@ export default function Form() {
           <label htmlFor="fullName">Full Name</label><br />
           <input placeholder="Type full name" id="fullName" type="text" value={formState.fullName} 
             onChange={(e) => {
-              setFormState({ ...formState, fullName: e.target.value });
+              setFormState({ ...formState, fullName: e.target.value.trim() }); // Trim whitespace
               // No need to track touched state
             }} 
           />
