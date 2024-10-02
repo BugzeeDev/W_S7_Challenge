@@ -1,15 +1,12 @@
 import React, { useEffect, useState } from 'react'
 import * as Yup from 'yup';
 
-
-
 // 👇 Here are the validation errors you will use with Yup.
 const validationErrors = {
   fullNameTooShort: 'full name must be at least 3 characters',
   fullNameTooLong: 'full name must be at most 20 characters',
   sizeIncorrect: 'size must be S or M or L'
 }
-
 
 const isFormValid = Yup.object().shape({
   fullName: Yup.string()
@@ -41,36 +38,87 @@ export default function Form() {
     size: '',
   });
 
-  const [submitEnabled, setSubmitEnabled] = useState(false); // for controlling the submit button status
+  const [submitEnabled, setSubmitEnabled] = useState(false);
+  const [formSuccess, setFormSuccess] = useState(''); 
+  const [formError, setFormError] = useState(''); 
 
-  const [formSuccess, setFormSuccess] = useState(''); // state for success submit message
-  const [formError, setFormError] = useState(''); // state for error submit message
+  const [sizeChanged, setSizeChanged] = useState(false); // Track if size has been changed
+
+  useEffect(() => {
+    // Validate form on state change
+    const validateForm = async () => {
+      try {
+        await isFormValid.validate(formState, { abortEarly: false });
+        setErrorState({ fullName: '', size: '' });
+        setSubmitEnabled(true);
+      } catch (err) {
+        const errors = {};
+        err.inner.forEach(error => {
+          errors[error.path] = error.message;
+        });
+        setErrorState(errors);
+        setSubmitEnabled(false);
+      }
+    };
+    validateForm();
+  }, [formState]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (submitEnabled) {
+      setFormSuccess(`Thank you for your order, ${formState.fullName}! Your ${formState.size === 'S' ? 'Small' : formState.size === 'M' ? 'Medium' : 'Large'} pizza with ${formState.toppings.length > 0 ? formState.toppings.length + ' toppings' : 'no toppings'} is on the way.`);
+      setFormError('');
+      
+      // Reset form state and error state
+      setFormState({ fullName: '', size: '', toppings: [] }); // Reset size to empty string
+      setErrorState({ fullName: '', size: '' }); // Reset error state
+      setSizeChanged(false); // Reset size changed state
+    } else {
+      setFormError('Please fix the errors before submitting.');
+    }
+  };
 
   return (
-    <form>
+    <form onSubmit={handleSubmit}>
       <h2>Order Your Pizza</h2>
-      {true && <div className='success'>Thank you for your order!</div>}
-      {true && <div className='failure'>Something went wrong</div>}
+      {formSuccess && <div className='success'>{formSuccess}</div>}
+      {formError && <div className='failure'>{formError}</div>}
 
       <div className="input-group">
         <div>
           <label htmlFor="fullName">Full Name</label><br />
-          <input placeholder="Type full name" id="fullName" type="text" value={formState.fullName} onChange={(e) => setFormState({ ...formState, fullName: e.target.value })} />
+          <input placeholder="Type full name" id="fullName" type="text" value={formState.fullName} 
+            onChange={(e) => {
+              setFormState({ ...formState, fullName: e.target.value });
+              // No need to track touched state
+            }} 
+          />
         </div>
-        {true && <div className='error'>Bad value</div>}
+        {formState.fullName && errorState.fullName && <div className='error'>{errorState.fullName}</div>} 
       </div>
 
       <div className="input-group">
         <div>
           <label htmlFor="size">Size</label><br />
-          <select id="size" onChange={(e) => setFormState({ ...formState, size: e.target.value })}>
+          <select id="size" value={formState.size} onChange={(e) => {
+              const newSize = e.target.value;
+              setFormState({ ...formState, size: newSize });
+              setSizeChanged(true); // Mark size as changed
+
+              // Show error if changing from a valid size to empty
+              if (newSize === '') {
+                setErrorState((prev) => ({ ...prev, size: validationErrors.sizeIncorrect }));
+              } else {
+                setErrorState((prev) => ({ ...prev, size: '' })); // Clear error if valid size is selected
+              }
+            }}>
             <option value="">----Choose Size----</option>
             <option value="S">Small</option>
             <option value="M">Medium</option>
             <option value="L">Large</option>
           </select>
         </div>
-        {true && <div className='error'>Bad value</div>}
+        {sizeChanged && formState.size === '' && errorState.size && <div className='error'>{errorState.size}</div>} 
       </div>
 
       <div className="input-group">
@@ -92,7 +140,6 @@ export default function Form() {
           </label>
         ))}
       </div>
-      {/* 👇 Make sure the submit stays disabled until the form validates! */}
       <input type="submit" disabled={!submitEnabled} />
     </form>
   )
